@@ -1,0 +1,8 @@
+[{
+  "_id": {
+    "$oid": "681c24e748972016d8cf0757"
+  },
+  "produk": "Kebab Sapi Original",
+  "jumlahTerjual": 30,
+  "hargaSatuan": 15000
+}]
