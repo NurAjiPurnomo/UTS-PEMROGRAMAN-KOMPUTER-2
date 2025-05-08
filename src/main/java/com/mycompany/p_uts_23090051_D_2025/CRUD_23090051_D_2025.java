@@ -1,125 +1,64 @@
 package com.mycompany.p_uts_23090051_D_2025;
 
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
-import java.util.ArrayList;
-import java.util.Scanner;
-/**
- *
- * @author ASUS
- */
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Updates;
+import org.bson.Document;
+import org.bson.conversions.Bson;
+
 public class CRUD_23090051_D_2025 {
-    
-    
-    // Kelas inner untuk merepresentasikan Document
-    static class Document {
-        String title;
-        String content;
-        int pages;
 
-        // Konstruktor untuk membuat dokumen
-        public Document(String title, String content, int pages) {
-            this.title = title;
-            this.content = content;
-            this.pages = pages;
-        }
-
-        // Method untuk menampilkan isi dokumen
-        public String toString() {
-            return "Title: " + title + ", Content: " + content + ", Pages: " + pages;
+    private static void viewData(FindIterable<Document> docs, String label) {
+        System.out.println("\n== " + label + " ==");
+        for (Document d : docs) {
+            System.out.println(d.toJson());
         }
     }
 
-    // List untuk menyimpan dokumen
-    static ArrayList<Document> documents = new ArrayList<>();
-    static Scanner scanner = new Scanner(System.in);
-
-    // Fungsi CREATE - Menambahkan 3 dokumen
-    public static void createDocuments() {
-        // Menambahkan dokumen pertama
-        documents.add(new Document("Surat", "Ini adalah surat penting", 1));
-        // Menambahkan dokumen kedua
-        documents.add(new Document("Laporan", "Isi laporan tahunan", 10));
-        // Menambahkan dokumen ketiga
-        documents.add(new Document("Proposal", "Proposal kegiatan sekolah", 5));
-        System.out.println("✔ 3 Dokumen berhasil ditambahkan.");
-    }
-
-    // Fungsi READ - Menampilkan seluruh dokumen
-    public static void readDocuments() {
-        System.out.println("\n📄 Daftar Dokumen:");
-        for (int i = 0; i < documents.size(); i++) {
-            // Menampilkan dokumen ke-i
-            System.out.println((i + 1) + ". " + documents.get(i));
-        }
-    }
-
-    // Fungsi UPDATE - Mengubah isi dokumen berdasarkan indeks
-    public static void updateDocument(int index, String newTitle, String newContent, int newPages) {
-        if (index >= 0 && index < documents.size()) {
-            // Mengambil dokumen berdasarkan indeks
-            Document doc = documents.get(index);
-            // Mengubah isi dokumen
-            doc.title = newTitle;
-            doc.content = newContent;
-            doc.pages = newPages;
-            System.out.println("✔ Dokumen berhasil diperbarui.");
-        } else {
-            System.out.println("❌ Indeks tidak ditemukan.");
-        }
-    }
-
-    // Fungsi DELETE - Menghapus dokumen berdasarkan indeks
-    public static void deleteDocument(int index) {
-        if (index >= 0 && index < documents.size()) {
-            // Menghapus dokumen dari list
-            documents.remove(index);
-            System.out.println("✔ Dokumen berhasil dihapus.");
-        } else {
-            System.out.println("❌ Indeks tidak ditemukan.");
-        }
-    }
-
-    // Fungsi SEARCHING - Mencari dokumen berdasarkan kata kunci
-    public static void searchDocuments(String keyword) {
-        System.out.println("\n🔍 Hasil pencarian untuk: " + keyword);
-        boolean found = false;
-
-        // Iterasi semua dokumen untuk pencarian
-        for (Document doc : documents) {
-            // Mencocokkan keyword dengan title atau content
-            if (doc.title.contains(keyword) || doc.content.contains(keyword)) {
-                System.out.println(doc);
-                found = true;
-            }
-        }
-
-        // Jika tidak ditemukan
-        if (!found) {
-            System.out.println("❌ Tidak ditemukan dokumen dengan kata kunci tersebut.");
-        }
-    }
-
-    // Fungsi MAIN untuk mencoba semua fitur
     public static void main(String[] args) {
-        // Memanggil fungsi CREATE
-        createDocuments();
+        String URL = "mongodb://localhost:27017/";
+        MongoClient client = MongoClients.create(URL);
+        MongoDatabase db = client.getDatabase("uts_23090051_2025");
+        MongoCollection<Document> tabel = db.getCollection("coll_23090051_D_2025");
 
-        // Menampilkan dokumen awal
-        readDocuments();
+        // INSERT (Create)
+        Document data = new Document("produk", "Kebab Sapi Original")
+                .append("jumlahTerjual", 25)
+                .append("hargaSatuan", 15000);
+        tabel.insertOne(data);
 
-        // Memperbarui dokumen ke-2
-        updateDocument(1, "Laporan Revisi", "Isi laporan yang telah diperbarui", 12);
-        readDocuments(); // Menampilkan hasil update
+        // VIEW (Read) sebelum update
+        FindIterable<Document> result = tabel.find();
+        viewData(result, "Data Penjualan Sebelum Update");
 
-        // Mencari dokumen dengan keyword "Proposal"
-        searchDocuments("Proposal");
+        // UPDATE jumlah terjual
+        Bson filter = Filters.eq("produk", "Kebab Sapi Original");
+        Bson update = Updates.set("jumlahTerjual", 30);
+        tabel.updateOne(filter, update);
 
-        // Menghapus dokumen ke-1
-        deleteDocument(0);
-        readDocuments(); // Menampilkan hasil setelah delete
+        // VIEW setelah update
+        result = tabel.find();
+        viewData(result, "Data Penjualan Setelah Update");
+
+        // DELETE berdasarkan produk
+        System.out.println("\n== DELETE DATA ==");
+        Bson dataTarget = Filters.eq("produk", "Kebab Ayam Pedas");
+        tabel.deleteOne(dataTarget);  // Tidak menghapus jika produk tidak ada
+
+        // SEARCHING berdasarkan harga satuan
+        System.out.println("\n== SEARCH DATA ==");
+        Bson find = Filters.eq("hargaSatuan", 15000);
+        Document found = tabel.find(find).first();
+        if (found != null) {
+            System.out.println(found.toJson());
+        } else {
+            System.out.println("Data penjualan tidak ditemukan.");
+        }
+
+        client.close();
     }
-
 }
